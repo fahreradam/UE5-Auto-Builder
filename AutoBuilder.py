@@ -193,7 +193,7 @@ async def RunBuild():
                 if 'File(s) up-to-date.' not in p4.warnings:
                     p4.run_sync('-f')
 
-        if(os.path.exists(BuildLocation) == False and current_changelist["client"] == p4.client and current_changelist['status'] == 'submitted'):               
+        if(os.path.exists(BuildLocation) == False and current_changelist["client"] != p4.client and current_changelist['status'] == 'submitted'):               
             # Creating a folder for the project build
             os.system('cmd /c "mkdir {}"'.format(BuildLocation))
 
