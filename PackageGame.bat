@@ -50,14 +50,14 @@ if exist "%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.sln" (
     echo %date% %time% Building Game Editor...
     echo.
 
-    call "%UNREAL_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildEditor -Project="%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.uproject" -notools
+    call "%UNREAL_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildEditor -Project="%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.uproject" -notools > %BuildLocation%/EditorBuildLog.txt
     if errorlevel 1 goto Error_BuildEditorFailed
 
     echo.
     echo %date% %time% Building Game...
     echo.
 
-    call "%UNREAL_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildGame -project="%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.uproject" -platform=Win64 -notools -configuration=Shipping
+    call "%UNREAL_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildGame -project="%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.uproject" -platform=Win64 -notools -configuration=Shipping > %BuildLocation%/GameBuildLog.txt
     if errorlevel 1 goto Error_BuildGameFailed
 )
 
@@ -71,7 +71,7 @@ REM - Note: When you are ready to ship your game, add "-nodebuginfo" to prevent 
 REM - Note: Using "-createreleaseversion" allows you to create Patches and DLC later for your game if you wish.
 REM - Note: You can use "-compressed" if you want to compress packages (this will make files smaller, but may take longer to load in game).
 
-call "%UNREAL_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.uproject" %INSTALLED% -platform=Win64 -configuration=Shipping -map=%MAPS% -nocompileeditor -nodebuginfo -unattended -utf8output -clean -build -cook -stage -pak -prereqs -package -archive -archivedirectory="%BuildLocation%" -createreleaseversion=1.0 > %BuildLocation%/BuildLog.txt
+call "%UNREAL_PATH%\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun -project="%PROJECT_PATH%\%PROJECT_NAME%\%PROJECT_NAME%.uproject" %INSTALLED% -platform=Win64 -configuration=Shipping -map=%MAPS% -nocompileeditor -nodebuginfo -unattended -utf8output -clean -build -cook -stage -pak -prereqs -package -archive -archivedirectory="%BuildLocation%" -createreleaseversion=1.0 > %BuildLocation%/PackageBuildLog.txt
 if errorlevel 1 goto Error_PackagingFailed
 
 echo.

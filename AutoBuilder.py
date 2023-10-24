@@ -182,17 +182,18 @@ async def RunBuild():
         current_changelist = p4.run('changelists')[0]
         BuildLocation = r"{}\Revision{}_Build".format(BuildsFolder, current_changelist["change"])
 
-        if(os.path.exists(BuildLocation) == False and current_changelist["client"] != p4.client and current_changelist['status'] == 'submitted'): 
-            # Preforming a regular pull otherwise preform a force pull if there were problem
-            # Force pull is usually needed if soemthing is modified on the autobuilder
-            # Note: Force pull will vary in time greatly depending on network speed
-            if (current_changelist['path'].split('/')[2] == ProjectPath.split('\\')[-1]):
-                try:   
-                    p4.run_sync()
-                
-                except:
+
+        # Preforming a regular pull otherwise preform a force pull if there were problem
+        # Force pull is usually needed if soemthing is modified on the autobuilder
+        # Note: Force pull will vary in time greatly depending on network speed
+        if (current_changelist['path'].split('/')[2] == ProjectPath.split('\\')[-1]):
+            try:   
+                p4.run_sync()
+            except P4Exception:
+                if 'File(s) up-to-date.' not in p4.warnings:
                     p4.run_sync('-f')
-                
+
+        if(os.path.exists(BuildLocation) == False and current_changelist["client"] == p4.client and current_changelist['status'] == 'submitted'):               
             # Creating a folder for the project build
             os.system('cmd /c "mkdir {}"'.format(BuildLocation))
 
@@ -205,34 +206,45 @@ async def RunBuild():
             # UnrealVersionPath - UE5 version path of the project to use the proper build file
             # Maps - The maps that are desired to be built
             # BuildLocation - This second one is to direct where the log file should be placed
+
             subprocess.run([BuildCommand, ProjectName, ProjectPath, BuildLocation, UnrealVersionPath, Maps, BuildLocation])
 
-            Logfile = open("{}/BuildLog.txt".format(BuildLocation), "r")
+            if(os.path.isfile("{}\PackageBuildLog.txt".format(BuildLocation))):
+                Logfile = open("{}\PackageBuildLog.txt".format(BuildLocation), "r")
+                os.remove("{}\GameBuildLog.txt".format(BuildLocation))
+                os.remove("{}\EditorBuildLog.txt".format(BuildLocation))
+
+            elif(os.path.isfile("{}\GameBuildLog.txt".format(BuildLocation))):
+                Logfile = open("{}\GameBuildLog.txt".format(BuildLocation), "r")
+                os.remove("{}\EditorBuildLog.txt".format(BuildLocation))            
+            
+            elif(os.path.isfile("{}\EditorBuildLog.txt".format(BuildLocation))):
+                Logfile = open("{}\EditorBuildLog.txt".format(BuildLocation), "r")
+                
             LogLines = Logfile.readlines()
 
-            if(LogLines[len(LogLines) - 1].find("Success") == -1):
-                
-                ErrorLog = open("{}/ErrorLog.txt".format(BuildLocation), "w")
-                for line in LogLines:
-                    if(line.find("Error:") != -1):
-                        ErrorLog.write(line)
-                ErrorLog.close()
+
+            ErrorLog = open("{}/ErrorLog.txt".format(BuildLocation), "w")
+            for line in LogLines:
+                if(line.find("error") != -1 or line.find("Error") != -1):
+                    ErrorLog.write(line)
 
             WarningLog = open("{}/WarningLog.txt".format(BuildLocation), "w")
 
             for line in LogLines:
                 if(line.find("Warning:") != -1):
                     WarningLog.write(line)
-
+                    
+            ErrorLog.close()
             WarningLog.close()
             Logfile.close()
+
 
             # Make all files in directory for add
             dir = os.walk(BuildLocation)
             for (dir_path, dir_names, file_name) in dir:
                 for name in file_name:
                     p4.run("add", r"{}\{}".format(dir_path, name))
-            
 
             # Submit files to perforce and send a message to the discord webhook whether build was successful or not
             BuildFiles = p4.fetch_change()
@@ -247,14 +259,17 @@ async def RunBuild():
 
             print("Files sent")
 
-
+            
             BuildSubmissions = []
 
             # Collect all pushed from the auto builder workspace
             for i in p4.run('changelists'):
                 if(i['client'] == Workspace):
-                    if(i['path'].split('/')[2] == ProjectPath.split('\\')[-1]):
-                        BuildSubmissions.append(i)          
+                    try:
+                        if(i['path'].split('/')[2] == ProjectPath.split('\\')[-1]):
+                            BuildSubmissions.append(i)     
+                    except:
+                        pass
 
             # Obliterate builds a past a given number
             # Clean up empty revisions caused by the obliterate
