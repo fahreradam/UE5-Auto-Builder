@@ -35,7 +35,7 @@ Port = ""
 Workspace = ""
 
 # How many seconds to wait till another pull attempt can be made
-PullDelay = -1
+PullDelay = 1
 
 # How many builds should be saved before they are obliterated in perforce
 # Note oblioteration will only work if the user is an admin
