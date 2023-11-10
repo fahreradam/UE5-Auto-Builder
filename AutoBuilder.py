@@ -73,7 +73,7 @@ Maps = ""
 # Confirming Variables are set
 RunProgram = True
 if(len(userlist) == 0):
-    print("At least one user has not been set in the userlist")
+    print("At least one user has not been set in the user list")
     RunProgram = False
 if(type(BuildManagerRoleID) != int):
     print("Build Manager Role ID is supposed to be an int")
@@ -182,18 +182,20 @@ async def RunBuild():
         current_changelist = p4.run('changelists')[0]
         BuildLocation = r"{}\Revision{}_Build".format(BuildsFolder, current_changelist["change"])
 
-
-        # Preforming a regular pull otherwise preform a force pull if there were problem
-        # Force pull is usually needed if soemthing is modified on the autobuilder
-        # Note: Force pull will vary in time greatly depending on network speed
-        if (current_changelist['path'].split('/')[2] == ProjectPath.split('\\')[-1]):
-            try:   
-                p4.run_sync()
+        if(os.path.exists(BuildLocation) == False and current_changelist["client"] != p4.client and current_changelist['status'] == 'submitted'): 
+            # Preforming a regular pull otherwise preform a force pull if there were problem
+            # Force pull is usually needed if soemthing is modified on the autobuilder
+            # Note: Force pull will vary in time greatly depending on network speed
+            try:
+                if (current_changelist['path'].split('/')[2] == ProjectPath.split('\\')[-1]):
+                    p4.run_sync()
             except P4Exception:
                 if 'File(s) up-to-date.' not in p4.warnings:
                     p4.run_sync('-f')
+                else:
+                    continue
 
-        if(os.path.exists(BuildLocation) == False and current_changelist["client"] != p4.client and current_changelist['status'] == 'submitted'):               
+
             # Creating a folder for the project build
             os.system('cmd /c "mkdir {}"'.format(BuildLocation))
 
